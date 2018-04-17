@@ -36,9 +36,6 @@ of how many records *would* be inserted, updated, and deleted will be printed at
 
 * Currently, only single-column primary keys are accepted.
 
-* When running in "live" mode (not dry-run), the number of records updated and inserted are not available, as an update
-cannot be distinguished from an insert in live mode. The number of updated vs inserted is available in dry-run mode.
-
 * Columns that are of a type that cannot be successfully cast to a portable format (such as text) and back again cannot be
 copied using this tool. All in-core and contrib/ PostgreSQL types can be so cast, but it is possible that some extension
 and user-defined types might fail.

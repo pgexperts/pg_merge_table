@@ -121,6 +121,7 @@ select_statement = 'SELECT %s FROM %s.%s' % (column_list_string, schema_name, ta
 insert_statement = """
     INSERT INTO %s.%s(%s) VALUES(%s)
         ON CONFLICT (%s) DO UPDATE SET %s
+        RETURNING (xmax = 0) AS inserted
     """ % (schema_name, 
            table_name, 
            column_list_string, 
@@ -166,7 +167,8 @@ for row in from_curs:
     rows_processed += 1
 
     if progress and (rows_processed % 1000) == 0:
-        print >>sys.stdout, "%s rows processed" % rows_processed
+        print >> sys.stdout, "%s rows processed, %s updated, %s inserted" % \
+                             (rows_processed, rows_updated, rows_inserted,)
 
     if tracking_table_insert:
         to_curs.execute(tracking_table_insert, row[:1])
@@ -182,6 +184,11 @@ for row in from_curs:
         continue
 
     to_curs.execute(insert_statement, row)
+    inserted = to_curs.fetchone()[0]
+    if inserted:
+        rows_inserted += 1
+    else:
+        rows_updated += 1
 
 if delete_missing:
     print >>sys.stdout, "deleting."
@@ -213,7 +220,7 @@ if dry_run:
     print >>sys.stdout, "dry run estimates: %s rows processed, %s updated, %s inserted, %s deleted" % \
         (rows_processed, rows_updated, rows_inserted, rows_deleted)
 else:
-     print >>sys.stdout, "%s rows processed, %s deleted" % \
-        (rows_processed, rows_deleted,)
+     print >>sys.stdout, "%s rows processed, %s updated, %s inserted, %s deleted" % \
+        (rows_processed, rows_updated, rows_inserted, rows_deleted)
 
 exit(0)
