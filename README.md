@@ -21,13 +21,13 @@ This will merge the entire contents of table "sch.tab" (schema "sch", table name
 server on host 10.2.3.1, database `prod`, into the one on 10.2.4.12, database `archive`. No records will be
 deleted from `archive`.
 
-   ./pg_merge_table.py --delete --from="host=10.2.3.1 dbname=prod" --to="host=10.2.4.12 dbname=archive" tbl
+    ./pg_merge_table.py --delete --from="host=10.2.3.1 dbname=prod" --to="host=10.2.4.12 dbname=archive" tbl
 
 This will merge the entire contents of table "tab" (schema "public", table name "tab") from the PostgreSQL
 server on host 10.2.3.1, database `prod`, into the one on 10.2.4.12, database `archive`. Any records (using
 the primary key) which do not exist on `prod` will be deleted from "tab" on `archive`.
 
-   ./pg_merge_table.py --dry-run --delete --from="host=10.2.3.1 dbname=prod" --to="host=10.2.4.12 dbname=archive" tbl
+    ./pg_merge_table.py --dry-run --delete --from="host=10.2.3.1 dbname=prod" --to="host=10.2.4.12 dbname=archive" tbl
 
 This will do a dry run of the merge operation above. No records will be changed on `archive`, but a summary
 of how many records *would* be inserted, updated, and deleted will be printed at the end.
@@ -68,4 +68,5 @@ optional arguments:
   --delete              delete entries in "to" table missing in "from" table"
   --dry-run             write counts of affected rows, but do not actually
                         copy any rows
-  --progress            write progress every 1,000 rows```
+  --progress            write progress every 1,000 rows
+```
