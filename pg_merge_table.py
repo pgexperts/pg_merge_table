@@ -27,9 +27,9 @@ parser.add_argument('--to', dest='to_connection_string', action='store',
 parser.add_argument('--delete', dest='delete_missing', action='store_true',
                     default=False,
                     help='delete entries in "to" table missing in "from" table"')
-parser.add_argument('--dry-run', dest='dry_run', action='store_true',
+parser.add_argument('--execute', dest='execute', action='store_true',
                     default=False,
-                    help='write counts of affected rows, but do not actually copy any rows')
+                    help='actually run the merge; by default, does a dry run only')
 parser.add_argument('--progress', dest='progress', action='store_true',
                     default=False,
                     help='write progress every 1,000 rows')
@@ -43,7 +43,7 @@ from_connnection_string = args.from_connection_string
 to_connection_string = args.to_connection_string
 
 delete_missing = args.delete_missing
-dry_run = args.dry_run
+execute = args.execute
 progress = args.progress
 
 #
@@ -173,7 +173,7 @@ for row in from_curs:
     if tracking_table_insert:
         to_curs.execute(tracking_table_insert, row[:1])
 
-    if dry_run:
+    if not execute:
         to_curs.execute(probe_statement, row[:1])
         already_exists = int(to_curs.fetchone()[0])
         if already_exists:
@@ -193,7 +193,7 @@ for row in from_curs:
 if delete_missing:
     print >>sys.stdout, "deleting."
 
-    if dry_run:
+    if not execute:
         to_curs.execute("""
             SELECT COUNT(*) FROM %s.%s WHERE %s NOT IN (SELECT pk FROM %s)
             """ % (schema_name, table_name, primary_key, tracking_table_name))
@@ -211,12 +211,12 @@ from_curs.close()
 
 from_connection.rollback()
 
-if dry_run:
+if not execute:
     to_connection.rollback()
 else:
     to_connection.commit()
 
-if dry_run:
+if not execute:
     print >>sys.stdout, "dry run estimates: %s rows processed, %s updated, %s inserted, %s deleted" % \
         (rows_processed, rows_updated, rows_inserted, rows_deleted)
 else:
