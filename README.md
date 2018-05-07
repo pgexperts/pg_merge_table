@@ -11,25 +11,26 @@ no such record exists, it is inserted.
 Optionally, after all inserts/updates are done, any records (by primary key) which do not exist in the "from"
 table but which do exist in the "to" table can be deleted.
 
-Currently, the script will only operate on tables with a single-column primary key.
+Currently, the script will only operate on tables with a single-column primary key, or with a column that
+is the only column in exactly one UNIQUE index.
 
 ## Examples
 
-    ./pg_merge_table.py --from="host=10.2.3.1 dbname=prod" --to="host=10.2.4.12 dbname=archive" sch.tab
+    ./pg_merge_table.py --execute --from="host=10.2.3.1 dbname=prod" --to="host=10.2.4.12 dbname=archive" sch.tab
 
 This will merge the entire contents of table "sch.tab" (schema "sch", table name "tab") from the PostgreSQL
 server on host 10.2.3.1, database `prod`, into the one on 10.2.4.12, database `archive`. No records will be
 deleted from `archive`.
 
-    ./pg_merge_table.py --delete --from="host=10.2.3.1 dbname=prod" --to="host=10.2.4.12 dbname=archive" tbl
+    ./pg_merge_table.py --execute --delete --from="host=10.2.3.1 dbname=prod" --to="host=10.2.4.12 dbname=archive" tbl
 
 This will merge the entire contents of table "tab" (schema "public", table name "tab") from the PostgreSQL
 server on host 10.2.3.1, database `prod`, into the one on 10.2.4.12, database `archive`. Any records (using
 the primary key) which do not exist on `prod` will be deleted from "tab" on `archive`.
 
-    ./pg_merge_table.py --dry-run --delete --from="host=10.2.3.1 dbname=prod" --to="host=10.2.4.12 dbname=archive" tbl
+    ./pg_merge_table.py --delete --from="host=10.2.3.1 dbname=prod" --to="host=10.2.4.12 dbname=archive" tbl
 
-This will do a dry run of the merge operation above. No records will be changed on `archive`, but a summary
+This will do a dry run of the merge operation above (note the lack of the `--execute` option). No records will be changed on `archive`, but a summary
 of how many records *would* be inserted, updated, and deleted will be printed at the end.
 
 ## Limitations and Quirks
@@ -44,8 +45,8 @@ and user-defined types might fail.
 
 ```$ ./pg_merge_table.py --help
 usage: pg_merge_table.py [-h] [--from FROM_CONNECTION_STRING]
-                         [--to TO_CONNECTION_STRING] [--delete] [--dry-run]
-                         [--progress]
+                         [--to TO_CONNECTION_STRING] [--key KEY] [--delete]
+                         [--execute] [--progress]
                          fq_table_name
 
 Merge a table from one PostgreSQL database to another.
@@ -62,8 +63,10 @@ optional arguments:
   --to TO_CONNECTION_STRING
                         connection string for "to" server (defaults to
                         "host=localhost")
+  --key KEY             key column for matching; it must exist on both tables,
+                        and the only column in a unique index
   --delete              delete entries in "to" table missing in "from" table"
-  --dry-run             write counts of affected rows, but do not actually
-                        copy any rows
+  --execute             actually run the merge; by default, does a dry run
+                        only
   --progress            write progress every 1,000 rows
 ```
