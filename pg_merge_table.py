@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 from __future__ import unicode_literals
+from __future__ import print_function
 
 import sys
 import argparse
@@ -8,7 +10,6 @@ import argparse
 import psycopg2
 
 from introspection import *
-
 
 # Parse and assign arguments
 
@@ -40,7 +41,6 @@ parser.add_argument('--progress', dest='progress', action='store_true',
 
 args = parser.parse_args()
 
-
 fq_table_name = args.fq_table_name
 
 from_connnection_string = args.from_connection_string
@@ -70,17 +70,17 @@ elif len(components) == 2:
     schema_name = components[0]
     table_name = components[1]
 else:
-    print >>sys.stderr, 'Table name "%s" contains more than one dot.' % fq_table_name
+    print('Table name "%s" contains more than one dot.' % fq_table_name, file=sys.stderr)
     exit(1)
-    
+
 # Verify table exists on both sides
 
 if not table_exists(from_connection, schema_name, table_name):
-    print >>sys.stderr, 'Table "%s.%s" does not exist on "from" server.' % (schema_name, table_name)
+    print('Table "%s.%s" does not exist on "from" server.' % (schema_name, table_name), file=sys.stderr)
     exit(1)
-    
+
 if not table_exists(to_connection, schema_name, table_name):
-    print >>sys.stderr, 'Table "%s.%s" does not exist on "to" server.' % (schema_name, table_name)
+    print('Table "%s.%s" does not exist on "to" server.' % (schema_name, table_name), file=sys.stderr)
     exit(1)
 
 # Retrieve the primary key column name, and all table columns
@@ -89,17 +89,19 @@ if key:
     key_type = type_for_column(from_connection, schema_name, table_name, key)
 
     if not key_type:
-        print >> sys.stderr, 'Table "%s.%s" coolumn %s does not exist on "from" server.' % (schema_name, table_name, key)
+        print('Table "%s.%s" coolumn %s does not exist on "from" server.' % (schema_name, table_name, key), file
+              =sys.stderr)
         exit(1)
 
     to_key_type = type_for_column(to_connection, schema_name, table_name, key)
     if not to_key_type:
-        print >> sys.stderr, 'Table "%s.%s" column "%s" does not exist on "to" server.' % (schema_name, table_name, key)
+        print('Table "%s.%s" column "%s" does not exist on "to" server.' % (schema_name, table_name, key), file
+              =sys.stderr)
         exit(1)
 
     if key_type != to_key_type:
-        print >> sys.stderr, 'Table "%s.%s" column "%s" is not the same type on the "from" (%s) and "to" (%s) server.' % \
-                             (schema_name, table_name, key, key_type, to_key_type)
+        print('Table "%s.%s" column "%s" is not the same type on the "from" (%s) and "to" (%s) server.' % \
+              (schema_name, table_name, key, key_type, to_key_type), file=sys.stderr)
         exit(1)
 
     from_curs = from_connection.cursor()
@@ -121,17 +123,16 @@ if key:
     from_key_index_count = int(from_curs.fetchone()[0])
 
     if from_key_index_count == 0:
-        print >> sys.stderr, 'Table "%s.%s" column "%s" does not appear by itself in a UNIQUE index on the "from" server.' % \
-                             (schema_name, table_name, key)
+        print('Table "%s.%s" column "%s" does not appear by itself in a UNIQUE index on the "from" server.' % \
+              (schema_name, table_name, key), file=sys.stderr)
         exit(1)
 
     if from_key_index_count > 1:
-        print >> sys.stderr, 'Table "%s.%s" column "%s" appears by itself in more than one UNIQUE index on the "from" server.' % \
-                             (schema_name, table_name, key)
+        print('Table "%s.%s" column "%s" appears by itself in more than one UNIQUE index on the "from" server.' % \
+              (schema_name, table_name, key), file=sys.stderr)
         exit(1)
 
     from_curs.close()
-
 
     to_curs = to_connection.cursor()
 
@@ -152,13 +153,13 @@ if key:
     to_key_index_count = int(to_curs.fetchone()[0])
 
     if to_key_index_count == 0:
-        print >> sys.stderr, 'Table "%s.%s" column "%s" does not appear by itself in a UNIQUE index on the "to" server.' % \
-                             (schema_name, table_name, key)
+        print('Table "%s.%s" column "%s" does not appear by itself in a UNIQUE index on the "to" server.' % \
+              (schema_name, table_name, key), file=sys.stderr)
         exit(1)
 
     if to_key_index_count > 1:
-        print >> sys.stderr, 'Table "%s.%s" column "%s" appears by itself in more than one UNIQUE index on the "to" server.' % \
-                             (schema_name, table_name, key)
+        print('Table "%s.%s" column "%s" appears by itself in more than one UNIQUE index on the "to" server.' % \
+              (schema_name, table_name, key), file=sys.stderr)
         exit(1)
 
     to_curs.close()
@@ -169,22 +170,25 @@ else:
     primary_key_to = list(primary_key_for_table(to_connection, schema_name, table_name))
 
     if len(primary_key_from) == 0:
-        print >>sys.stderr, 'Table "%s.%s" does not have a primary key on "from" server.' % (schema_name, table_name)
+        print('Table "%s.%s" does not have a primary key on "from" server.' % (schema_name, table_name), file
+              =sys.stderr)
         exit(1)
     elif len(primary_key_from) > 1:
-        print >>sys.stderr, 'Table "%s.%s" has a multi-column primary key on "from" server, currently not supported.' % (schema_name, table_name)
+        print('Table "%s.%s" has a multi-column primary key on "from" server, currently not supported.' % (
+        schema_name, table_name), file=sys.stderr)
         exit(1)
 
     if len(primary_key_to) == 0:
-        print >>sys.stderr, 'Table "%s.%s" does not have a primary key on "to" server.' % (schema_name, table_name)
+        print('Table "%s.%s" does not have a primary key on "to" server.' % (schema_name, table_name), file=sys.stderr)
         exit(1)
     elif len(primary_key_to) > 1:
-        print >>sys.stderr, 'Table "%s.%s" has a multi-column primary key on "to" server, currently not supported.' % (schema_name, table_name)
+        print('Table "%s.%s" has a multi-column primary key on "to" server, currently not supported.' % (
+        schema_name, table_name), file=sys.stderr)
         exit(1)
 
     if primary_key_from[0] != primary_key_to[0]:
-        print >>sys.stderr, 'Table "%s.%s" has different primary key column names on "from" (%s) and "to" (%s)servers.' % \
-            (schema_name, table_name, primary_key_from[0], primary_key_to[0],)
+        print('Table "%s.%s" has different primary key column names on "from" (%s) and "to" (%s)servers.' % \
+              (schema_name, table_name, primary_key_from[0], primary_key_to[0],), file=sys.stderr)
         exit(1)
 
     key = primary_key_from[0]
@@ -208,12 +212,12 @@ insert_statement = """
     INSERT INTO %s.%s(%s) VALUES(%s)
         ON CONFLICT (%s) DO UPDATE SET %s
         RETURNING (xmax = 0) AS inserted
-    """ % (schema_name, 
-           table_name, 
-           column_list_string, 
+    """ % (schema_name,
+           table_name,
+           column_list_string,
            replacement_string,
            key,
-           ', '.join([ column + ' = EXCLUDED.' + column for column in columns[1:] ]))
+           ', '.join([column + ' = EXCLUDED.' + column for column in columns[1:]]))
 
 # To avoid memory issues, we use a server-side cursor rather than just issuing what might
 # be a truly gigantic SELECT statement
@@ -227,13 +231,13 @@ to_curs = to_connection.cursor()
 
 if delete_missing:
     tracking_table_name = "delete_track_" + table_name
-    
+
     to_curs.execute("""
         CREATE TEMPORARY TABLE %s (
             pk %s PRIMARY KEY
             ) ON COMMIT DROP
         """ % (tracking_table_name, key_type,))
-        
+
     tracking_table_insert = "INSERT INTO " + tracking_table_name + "(pk) VALUES(%s)"
 else:
     tracking_table_name = ""
@@ -241,7 +245,7 @@ else:
 
 probe_statement = "SELECT COUNT(*) FROM %s.%s WHERE %s=" % (schema_name, table_name, key,)
 probe_statement += '%s'
-    
+
 rows_processed = 0
 rows_updated = 0
 rows_deleted = 0
@@ -272,26 +276,25 @@ for row in from_curs:
             rows_updated += 1
 
     if progress and (rows_processed % 1000) == 0:
-        print >> sys.stdout, "%s rows processed, %s updated, %s inserted" % \
-                             (rows_processed, rows_updated, rows_inserted,)
-
+        print("%s rows processed, %s updated, %s inserted" % \
+              (rows_processed, rows_updated, rows_inserted,), file=sys.stdout)
 
 from_curs.close()
 
 if delete_missing and progress:
-    print >>sys.stdout, "deleting."
+    print("deleting.", file=sys.stdout)
 
     if not execute:
         to_curs.execute("""
             SELECT COUNT(*) FROM %s.%s WHERE %s NOT IN (SELECT pk FROM %s)
             """ % (schema_name, table_name, key, tracking_table_name))
-        
+
         rows_deleted = int(to_curs.fetchone()[0])
     else:
         to_curs.execute("""
             DELETE FROM %s.%s WHERE %s NOT IN (SELECT pk FROM %s)
             """ % (schema_name, table_name, key, tracking_table_name))
-        
+
         rows_deleted = to_curs.rowcount
 
 from_connection.rollback()
@@ -302,16 +305,16 @@ else:
     to_connection.commit()
     to_connection.autocommit = True
     if progress:
-        print >> sys.stdout, "vacuuming."
-    to_curs.execute("VACUUM ANALYZE %s.%s" % (schema_name, table_name,) )
+        print("vacuuming.", file=sys.stdout)
+    to_curs.execute("VACUUM ANALYZE %s.%s" % (schema_name, table_name,))
 
 to_curs.close()
 
 if not execute:
-    print >>sys.stdout, "dry run estimates: %s rows processed, %s updated, %s inserted, %s deleted" % \
-        (rows_processed, rows_updated, rows_inserted, rows_deleted)
+    print("dry run estimates: %s rows processed, %s updated, %s inserted, %s deleted" % \
+          (rows_processed, rows_updated, rows_inserted, rows_deleted), file=sys.stdout)
 else:
-     print >>sys.stdout, "%s rows processed, %s updated, %s inserted, %s deleted" % \
-        (rows_processed, rows_updated, rows_inserted, rows_deleted)
+    print("%s rows processed, %s updated, %s inserted, %s deleted" % \
+          (rows_processed, rows_updated, rows_inserted, rows_deleted), file=sys.stdout)
 
 exit(0)
