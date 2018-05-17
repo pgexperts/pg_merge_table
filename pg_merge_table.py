@@ -202,14 +202,16 @@ if columns[0] != key:
     columns.remove(key)
     columns.insert(0, key)
 
+columns = ['"' + c + '"' for c in columns]
+
 # These are used to build the SQL for SELECT, INSERT, and UPDATE operations.
 
 column_list_string = ', '.join(columns)
 replacement_string = ', '.join(['%s'] * len(columns))
 
-select_statement = 'SELECT %s FROM %s.%s' % (column_list_string, schema_name, table_name)
+select_statement = 'SELECT %s FROM "%s"."%s"' % (column_list_string, schema_name, table_name)
 insert_statement = """
-    INSERT INTO %s.%s(%s) VALUES(%s)
+    INSERT INTO "%s"."%s"(%s) VALUES(%s)
         ON CONFLICT (%s) DO UPDATE SET %s
         RETURNING (xmax = 0) AS inserted
     """ % (schema_name,
@@ -243,7 +245,9 @@ else:
     tracking_table_name = ""
     tracking_table_insert = ""
 
-probe_statement = "SELECT COUNT(*) FROM %s.%s WHERE %s=" % (schema_name, table_name, key,)
+probe_statement = """
+  SELECT COUNT(*) FROM "%s"."%s" WHERE %s=
+  """ % (schema_name, table_name, key,)
 probe_statement += '%s'
 
 rows_processed = 0
@@ -286,13 +290,13 @@ if delete_missing and progress:
 
     if not execute:
         to_curs.execute("""
-            SELECT COUNT(*) FROM %s.%s WHERE %s NOT IN (SELECT pk FROM %s)
+            SELECT COUNT(*) FROM "%s"."%s" WHERE %s NOT IN (SELECT pk FROM %s)
             """ % (schema_name, table_name, key, tracking_table_name))
 
         rows_deleted = int(to_curs.fetchone()[0])
     else:
         to_curs.execute("""
-            DELETE FROM %s.%s WHERE %s NOT IN (SELECT pk FROM %s)
+            DELETE FROM "%s"."%s" WHERE %s NOT IN (SELECT pk FROM %s)
             """ % (schema_name, table_name, key, tracking_table_name))
 
         rows_deleted = to_curs.rowcount
@@ -306,7 +310,7 @@ else:
     to_connection.autocommit = True
     if progress:
         print("vacuuming.", file=sys.stdout)
-    to_curs.execute("VACUUM ANALYZE %s.%s" % (schema_name, table_name,))
+    to_curs.execute("""VACUUM ANALYZE "%s"."%s" """ % (schema_name, table_name,))
 
 to_curs.close()
 
